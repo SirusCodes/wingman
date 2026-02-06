@@ -5,26 +5,29 @@ from langchain_core.documents import Document
 from bs4 import BeautifulSoup
 import requests
 
-from ai.store import WEBSITE, get_vector_store
+from ai.store import get_vector_store
 
 
-def store_website(url: str, data_id: str) -> list[str]:
+def store_website(url: str, data_id: str, user_id: str) -> list[str]:
     """Recurse upto 3 levels with the same domain and store the data in the vector store."""
     docs = crawl_website(url, max_depth=2)
 
     for doc in docs:
         doc.metadata["data_id"] = data_id
 
-    return store_docs(docs, WEBSITE)
+    return store_docs(docs, user_id)
 
 
-def store_pdf_doc(file_path: str, collection_name: str, data_id: str) -> list[str]:
+def store_pdf_doc(file_path: str, data_id: str, user_id: str) -> list[str]:
     loader = PyPDFLoader(file_path)
-    doc = loader.load()
+    docs = loader.load()
+
+    for doc in docs:
+        doc.metadata.update({"data_id": data_id, "source": "resume"})
 
     return store_docs(
-        list(map(lambda d: d.metadata.update({"data_id": data_id}) or d, doc)),
-        collection_name,
+        docs,
+        user_id,
     )
 
 
@@ -73,6 +76,12 @@ def crawl_website(
         )
         response = requests.get(url_without_fragment, timeout=10)
         response.raise_for_status()
+
+        # Only process HTML documents
+        content_type = response.headers.get("Content-Type", "").lower()
+        if "text/html" not in content_type:
+            print(f"{'  ' * current_depth}Skipping non-HTML document: {content_type}")
+            return []
 
         soup = BeautifulSoup(response.content, "html.parser")
 

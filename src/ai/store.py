@@ -2,10 +2,6 @@ from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 
-RESUME = "resume"
-WEBSITE = "website"
-
-
 def get_vector_store(collection_name: str) -> Chroma:
     embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
     vector_store = Chroma(
