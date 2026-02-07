@@ -1,5 +1,6 @@
 from ai.agents import get_agent
 from ai.doc_manager import store_pdf_doc, store_website
+from langchain_core.messages import HumanMessage
 
 import getpass
 import os
@@ -9,6 +10,14 @@ dotenv.load_dotenv()
 
 if "GOOGLE_API_KEY" not in os.environ:
     os.environ["GOOGLE_API_KEY"] = getpass.getpass("Enter your Google AI API key: ")
+
+if "CF_ACCOUNT_ID" not in os.environ:
+    os.environ["CF_ACCOUNT_ID"] = getpass.getpass("Enter your Cloudflare Account ID: ")
+
+if "CF_AI_API_TOKEN" not in os.environ:
+    os.environ["CF_AI_API_TOKEN"] = getpass.getpass(
+        "Enter your Cloudflare AI API key: "
+    )
 
 
 def main():
@@ -24,9 +33,9 @@ def main():
 
     agent = get_agent()
 
-    query = "Why should I hire him?"
+    query = "Give me reasons to hire Darshan"
     for events in agent.stream(
-        {"messages": [{"role": "user", "content": query}]},
+        {"messages": [HumanMessage(content=query)]},
         stream_mode="values",
         context={
             "admin_name": "Darshan Rander",
