@@ -1,9 +1,10 @@
 import json
 import os
+import uuid
 from typing import AsyncGenerator, Literal
 
 import dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -16,8 +17,11 @@ from langchain_core.messages import (
 )
 
 from ai.agents import get_agent
+from ai.doc_manager import store_portfolio, store_blog, store_pdf_doc
 
 dotenv.load_dotenv()
+
+user_id = "default_user"
 
 # Ensure required environment variables are set
 required_env_vars = [
@@ -25,6 +29,10 @@ required_env_vars = [
     "CF_ACCOUNT_ID",
     "CF_AI_API_TOKEN",
     "ADMIN_NAME",
+    "ADMIN_PASSWORD",
+    "CHROMA_API_KEY",
+    "CHROMA_TENANT",
+    "CHROMA_DATABASE",
 ]
 for var in required_env_vars:
     if var not in os.environ:
@@ -214,7 +222,7 @@ async def stream_chat_events(
             stream_mode="values",
             context={
                 "admin_name": admin_name,
-                "user_id": "default_user",
+                "user_id": user_id,
             },
             config={"configurable": {"thread_id": thread_id}},
         ):
@@ -296,6 +304,80 @@ async def stream_chat_events(
 async def health_check():
     """Health check endpoint"""
     return {"status": "ok"}
+
+
+class UploadResponse(BaseModel):
+    """Response model for the upload endpoint"""
+
+    success: bool = Field(..., description="Whether the upload was successful")
+    message: str = Field(..., description="Status message")
+    data_ids: dict[str, list[str]] = Field(
+        default_factory=dict, description="Document IDs for each uploaded data type"
+    )
+
+
+@app.post(
+    "/upload",
+    response_model=UploadResponse,
+    tags=["Upload"],
+    summary="Upload resume, portfolio, and blog",
+    description="Upload resume, portfolio, and blog links with password authentication",
+)
+async def upload_data(
+    password: str = Form(..., description="Admin password for authentication"),
+    resume_url: str | None = Form(None, description="Resume PDF URL"),
+    portfolio_url: str | None = Form(None, description="Portfolio website URL"),
+    blog_url: str | None = Form(None, description="Blog website URL"),
+):
+    """
+    Upload resume, portfolio, and blog data with password verification.
+
+    Args:
+        password: Admin password (verified against ADMIN_PASSWORD env var)
+        resume_url: Optional URL to resume PDF
+        portfolio_url: Optional portfolio website URL
+        blog_url: Optional blog website URL
+
+    Returns:
+        UploadResponse with document IDs for each uploaded data type
+    """
+    # Verify password
+    admin_password = os.environ.get("ADMIN_PASSWORD")
+    if password != admin_password:
+        raise HTTPException(status_code=401, detail="Invalid password")
+
+    # Validate that at least one data source is provided
+    if not resume_url and not portfolio_url and not blog_url:
+        raise HTTPException(
+            status_code=422,
+            detail="At least one of resume_url, portfolio_url, or blog_url must be provided",
+        )
+
+    doc_ids = {}
+
+    # Process resume
+    if resume_url:
+        data_id = f"resume_{user_id}_{uuid.uuid4().hex[:8]}"
+        resume_doc_ids = store_pdf_doc(resume_url, data_id, user_id)
+        doc_ids["resume"] = resume_doc_ids
+
+    # Process portfolio
+    if portfolio_url:
+        data_id = f"portfolio_{user_id}_{uuid.uuid4().hex[:8]}"
+        portfolio_doc_ids = store_portfolio(portfolio_url, data_id, user_id)
+        doc_ids["portfolio"] = portfolio_doc_ids
+
+    # Process blog
+    if blog_url:
+        data_id = f"blog_{user_id}_{uuid.uuid4().hex[:8]}"
+        blog_doc_ids = store_blog(blog_url, data_id, user_id)
+        doc_ids["blog"] = blog_doc_ids
+
+    return UploadResponse(
+        success=True,
+        message="Data uploaded successfully",
+        data_ids=doc_ids,
+    )
 
 
 @app.post(
