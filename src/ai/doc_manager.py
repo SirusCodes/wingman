@@ -12,7 +12,24 @@ from ai.store import get_vector_store
 
 def store_portfolio(url: str, data_id: str, user_id: str) -> list[str]:
     """Store the portfolio data in the vector store."""
-    return store_blog(url, data_id, user_id)
+    site = crawl_website(url, max_depth=0)
+
+    text_splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[
+            ("h1", "Header 1"),
+            ("h2", "Header 2"),
+        ],
+        elements_to_preserve=["table", "ul", "ol", "code"],
+        denylist_tags=["script", "style", "head"],
+        external_metadata={"data_id": data_id, "source": url},
+        preserve_links=True,
+        chunk_overlap=200,
+        preserve_parent_metadata=True,
+        normalize_text=True,
+    )
+
+    store = get_vector_store(collection_name=user_id)
+    return store.add_documents(text_splitter.split_text(site))
 
 
 def store_blog(url: str, data_id: str, user_id: str) -> list[str]:
