@@ -210,7 +210,7 @@ async def stream_chat_events(
     try:
         # Stream events from the agent
         admin_name = os.environ["ADMIN_NAME"]
-        with get_agent() as agent:
+        async with get_agent() as agent:
             async for event in agent.astream(
                 {"messages": [HumanMessage(content=prompt)]},
                 stream_mode="values",
@@ -220,7 +220,7 @@ async def stream_chat_events(
                 },
                 config={"configurable": {"thread_id": thread_id}},
             ):
-                # Extract the last message from the event
+                # Extract the last message from the event5
                 if "messages" in event and event["messages"]:
                     message: AnyMessage = event["messages"][-1]
 

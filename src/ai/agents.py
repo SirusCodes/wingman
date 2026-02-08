@@ -1,6 +1,6 @@
+from contextlib import asynccontextmanager
 import json
 import os
-from contextlib import contextmanager
 from typing import Any
 from langchain_cloudflare import ChatCloudflareWorkersAI
 from langchain_core.messages import HumanMessage, AIMessage
@@ -15,7 +15,7 @@ from langchain.agents.middleware import (
     SummarizationMiddleware,
 )
 from langchain_core.documents import Document
-from langgraph.checkpoint.postgres import PostgresSaver
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langchain_core.vectorstores import VectorStore
 
 
@@ -106,16 +106,16 @@ class ChatCache(AgentMiddleware):
         self.vector_store.add_documents([doc])
 
 
-@contextmanager
-def get_agent():
+@asynccontextmanager
+async def get_agent():
     chat_model = ChatCloudflareWorkersAI(
         model_name="@cf/qwen/qwen3-30b-a3b-fp8", temperature=0.7
     )
 
-    with PostgresSaver.from_conn_string(
+    async with AsyncPostgresSaver.from_conn_string(
         os.getenv("POSTGRES_URL")
     ) as checkpointer:
-        checkpointer.setup()
+        await checkpointer.setup()
         agent = create_agent(
             model=chat_model,
             tools=tools.get_all(),
