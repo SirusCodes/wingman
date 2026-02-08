@@ -1,37 +1,60 @@
 from urllib.parse import urljoin, urlparse
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.documents import Document
-from bs4 import BeautifulSoup
+from langchain_text_splitters import (
+    RecursiveCharacterTextSplitter,
+    HTMLSemanticPreservingSplitter,
+)
+from bs4 import BeautifulSoup, Tag
 import requests
 
 from ai.store import get_vector_store
 
 
-def store_website(url: str, data_id: str, user_id: str) -> list[str]:
+def store_portfolio(url: str, data_id: str, user_id: str) -> list[str]:
+    """Store the portfolio data in the vector store."""
+    return store_blog(url, data_id, user_id)
+
+
+def store_blog(url: str, data_id: str, user_id: str) -> list[str]:
     """Recurse upto 3 levels with the same domain and store the data in the vector store."""
-    docs = crawl_website(url, max_depth=2)
+    sites = crawl_website(url, max_depth=2)
 
-    for doc in docs:
-        doc.metadata["data_id"] = data_id
+    def code_handler(element: Tag) -> str:
+        data_lang = element.get("data-lang")
+        code_format = f"<code:{data_lang}>{element.get_text()}</code>"
 
-    return store_docs(docs, user_id)
+        return code_format
+
+    text_splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[
+            ("h1", "Header 1"),
+            ("h2", "Header 2"),
+        ],
+        elements_to_preserve=["table", "ul", "ol", "code"],
+        denylist_tags=["script", "style", "head"],
+        custom_handlers={"code": code_handler},
+        external_metadata={"data_id": data_id, "source": url},
+        preserve_links=True,
+        chunk_overlap=200,
+        preserve_parent_metadata=True,
+        normalize_text=True,
+    )
+
+    store = get_vector_store(collection_name=user_id)
+    doc_ids = []
+    for site in sites:
+        doc_ids.extend(store.add_documents(text_splitter.split_text(site)))
+
+    return doc_ids
 
 
 def store_pdf_doc(file_path: str, data_id: str, user_id: str) -> list[str]:
-    loader = PyPDFLoader(file_path)
+    loader = PyPDFLoader(file_path, extraction_mode="layout")
     docs = loader.load()
 
     for doc in docs:
         doc.metadata.update({"data_id": data_id, "source": "resume"})
 
-    return store_docs(
-        docs,
-        user_id,
-    )
-
-
-def store_docs(docs: list[Document], collection_name: str) -> list[str]:
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
@@ -39,7 +62,7 @@ def store_docs(docs: list[Document], collection_name: str) -> list[str]:
     )
     all_splits = text_splitter.split_documents(docs)
 
-    store = get_vector_store(collection_name=collection_name)
+    store = get_vector_store(collection_name=user_id)
 
     doc_ids = store.add_documents(all_splits)
     return doc_ids
@@ -51,7 +74,7 @@ def crawl_website(
     visited: set = None,
     base_domain: str = None,
     current_depth: int = 0,
-) -> list[Document]:
+) -> list[str]:
     """Custom recursive crawler that stays within the same domain."""
     if visited is None:
         visited = set()
@@ -92,15 +115,8 @@ def crawl_website(
         # Extract text content
         text_content = soup.get_text(separator="\n", strip=True)
 
-        # Create document
-        doc = Document(
-            page_content=text_content,
-            metadata={
-                "source": url_without_fragment,
-                "title": soup.title.string if soup.title else "",
-            },
-        )
-        docs.append(doc)
+        # Append text content
+        docs.append(text_content)
 
         # Extract all links if not at max depth
         if current_depth < max_depth:
