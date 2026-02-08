@@ -10,6 +10,12 @@ import requests
 from ai.store import get_vector_store
 
 
+def clear_documents_with_data_id(data_id: str, user_id: str) -> None:
+    """Clear documents with the given data_id from the vector store."""
+    store = get_vector_store(collection_name=user_id)
+    store.delete(where={"metadata.data_id": data_id})
+
+
 def store_portfolio(url: str, data_id: str, user_id: str) -> list[str]:
     """Store the portfolio data in the vector store."""
     site = crawl_website(url, max_depth=0)

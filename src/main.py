@@ -17,7 +17,12 @@ from langchain_core.messages import (
 )
 
 from ai.agents import get_agent
-from ai.doc_manager import store_portfolio, store_blog, store_pdf_doc
+from ai.doc_manager import (
+    clear_documents_with_data_id,
+    store_portfolio,
+    store_blog,
+    store_pdf_doc,
+)
 
 dotenv.load_dotenv()
 
@@ -350,19 +355,22 @@ async def upload_data(
 
     # Process resume
     if resume_url:
-        data_id = f"resume_{user_id}_{uuid.uuid4().hex[:8]}"
+        data_id = f"resume_{user_id}"
+        clear_documents_with_data_id(data_id, user_id)
         resume_doc_ids = store_pdf_doc(resume_url, data_id, user_id)
         doc_ids["resume"] = resume_doc_ids
 
     # Process portfolio
     if portfolio_url:
-        data_id = f"portfolio_{user_id}_{uuid.uuid4().hex[:8]}"
+        data_id = f"portfolio_{user_id}"
+        clear_documents_with_data_id(data_id, user_id)
         portfolio_doc_ids = store_portfolio(portfolio_url, data_id, user_id)
         doc_ids["portfolio"] = portfolio_doc_ids
 
     # Process blog
     if blog_url:
-        data_id = f"blog_{user_id}_{uuid.uuid4().hex[:8]}"
+        data_id = f"blog_{user_id}"
+        clear_documents_with_data_id(data_id, user_id)
         blog_doc_ids = store_blog(blog_url, data_id, user_id)
         doc_ids["blog"] = blog_doc_ids
 
