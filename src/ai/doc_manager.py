@@ -20,6 +20,10 @@ def store_portfolio(url: str, data_id: str, user_id: str) -> list[str]:
     """Store the portfolio data in the vector store."""
     site = crawl_website(url, max_depth=0)
 
+    if not site:
+        print(f"Failed to crawl portfolio URL: {url}")
+        return []
+
     text_splitter = HTMLSemanticPreservingSplitter(
         headers_to_split_on=[
             ("h1", "Header 1"),
@@ -41,6 +45,10 @@ def store_portfolio(url: str, data_id: str, user_id: str) -> list[str]:
 def store_blog(url: str, data_id: str, user_id: str) -> list[str]:
     """Recurse upto 3 levels with the same domain and store the data in the vector store."""
     sites = crawl_website(url, max_depth=2)
+
+    if not sites:
+        print(f"Failed to crawl blog URL: {url}")
+        return []
 
     def code_handler(element: Tag) -> str:
         data_lang = element.get("data-lang")
