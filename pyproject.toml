@@ -15,4 +15,5 @@ dependencies = [
     "langchain-cloudflare>=0.2.1",
     "langgraph-checkpoint-postgres>=3.0.4",
     "lxml>=6.0.2",
+    "langchain>=1.2.9",
 ]

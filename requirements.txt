@@ -515,6 +515,7 @@ httpx==0.28.1 \
     #   fastapi-cloud-cli
     #   huggingface-hub
     #   langchain-cloudflare
+    #   langgraph-sdk
     #   langsmith
     #   sqlalchemy-cloudflare-d1
 httpx-sse==0.4.3 \
@@ -570,6 +571,10 @@ kubernetes==35.0.0 \
     --hash=sha256:39e2b33b46e5834ef6c3985ebfe2047ab39135d41de51ce7641a7ca5b372a13d \
     --hash=sha256:3d00d344944239821458b9efd484d6df9f011da367ecb155dadf9513f05f09ee
     # via chromadb
+langchain==1.2.9 \
+    --hash=sha256:ae266c640b63c38f16b6d996a50aea575940b29b63cbc652c5d12f0111357f01 \
+    --hash=sha256:c1af39d22b7f0415a6f8fa63b37f692335601d3333592c481b899166c55f3fcb
+    # via chatabout
 langchain-chroma==1.1.0 \
     --hash=sha256:8069685e7848041e998d16c8a4964256b031fd20551bf59429173415bc2adc12 \
     --hash=sha256:ff65e4a2ccefb0fb9fde2ff38705022ace402f979d557f018f6e623f7288f0fc
@@ -590,26 +595,44 @@ langchain-core==1.2.9 \
     --hash=sha256:7e5ecba5ed7a65852e8d5288e9ceeba05340fa9baf32baf672818b497bbaea8f \
     --hash=sha256:a3768febc762307241d153b0f8bc58fd4b70c0ff077fda3274606741fca3f5a7
     # via
+    #   langchain
     #   langchain-chroma
     #   langchain-classic
     #   langchain-cloudflare
     #   langchain-community
     #   langchain-text-splitters
+    #   langgraph
     #   langgraph-checkpoint
+    #   langgraph-prebuilt
 langchain-text-splitters==1.1.0 \
     --hash=sha256:75e58acb7585dc9508f3cd9d9809cb14751283226c2d6e21fb3a9ae57582ca22 \
     --hash=sha256:f00341fe883358786104a5f881375ac830a4dd40253ecd42b4c10536c6e4693f
     # via
     #   chatabout
     #   langchain-classic
+langgraph==1.0.8 \
+    --hash=sha256:2630fc578846995114fd659f8b14df9eff5a4e78c49413f67718725e88ceb544 \
+    --hash=sha256:da737177c024caad7e5262642bece4f54edf4cba2c905a1d1338963f41cf0904
+    # via langchain
 langgraph-checkpoint==4.0.0 \
     --hash=sha256:3fa9b2635a7c5ac28b338f631abf6a030c3b508b7b9ce17c22611513b589c784 \
     --hash=sha256:814d1bd050fac029476558d8e68d87bce9009a0262d04a2c14b918255954a624
-    # via langgraph-checkpoint-postgres
+    # via
+    #   langgraph
+    #   langgraph-checkpoint-postgres
+    #   langgraph-prebuilt
 langgraph-checkpoint-postgres==3.0.4 \
     --hash=sha256:12cd5661da2a374882770deb9008a4eb16641c3fd38d7595e312030080390c6e \
     --hash=sha256:83e6a1097563369173442de2a66e6d712d60a1a6de07c98c5130d476bb2b76ae
     # via chatabout
+langgraph-prebuilt==1.0.7 \
+    --hash=sha256:38e097e06de810de4d0e028ffc0e432bb56d1fb417620fb1dfdc76c5e03e4bf9 \
+    --hash=sha256:e14923516504405bb5edc3977085bc9622c35476b50c1808544490e13871fe7c
+    # via langgraph
+langgraph-sdk==0.3.4 \
+    --hash=sha256:a8055464027c70ff7b454c0d67caec9a91c6a2bc75c66d023d3ce48773a2a774 \
+    --hash=sha256:eb73a2fb57a4167aeb31efeaf0c4daecd2cf0c942e8a376670fd1cc636992f49
+    # via langgraph
 langsmith==0.6.8 \
     --hash=sha256:3a7eb7155f2839dc729a5aa5b0bfc4aa1cb617b09a2290cf77031041271a7cdf \
     --hash=sha256:d17da18aeef15fdb4c3baec348bad64056591d785629cd5ba4846fd93cab166b
@@ -1007,6 +1030,7 @@ orjson==3.11.7 \
     # via
     #   chromadb
     #   langgraph-checkpoint-postgres
+    #   langgraph-sdk
     #   langsmith
 ormsgpack==1.12.2 \
     --hash=sha256:118576ea6006893aea811b17429bfc561b4778fad393f5f538c84af70b01260c \
@@ -1234,9 +1258,11 @@ pydantic==2.12.5 \
     #   chromadb
     #   fastapi
     #   fastapi-cloud-cli
+    #   langchain
     #   langchain-classic
     #   langchain-cloudflare
     #   langchain-core
+    #   langgraph
     #   langsmith
     #   pydantic-extra-types
     #   pydantic-settings
@@ -1850,7 +1876,9 @@ xxhash==3.6.0 \
     --hash=sha256:f205badabde7aafd1a31e8ca2a3e5a763107a71c397c4481d6a804eb5063d8bd \
     --hash=sha256:f22927652cba98c44639ffdc7aaf35828dccf679b10b31c4ad72a5b530a18eb7 \
     --hash=sha256:fba27a198363a7ef87f8c0f6b171ec36b674fe9053742c58dd7e3201c1ab30ee
-    # via langsmith
+    # via
+    #   langgraph
+    #   langsmith
 yarl==1.22.0 \
     --hash=sha256:01e73b85a5434f89fc4fe27dcda2aff08ddf35e4d47bbbea3bdcd25321af538a \
     --hash=sha256:078a8aefd263f4d4f923a9677b942b445a2be970ca24548a8102689a3a8ab8da \
