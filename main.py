@@ -29,7 +29,6 @@ user_id = "default_user"
 
 # Ensure required environment variables are set
 required_env_vars = [
-    "GOOGLE_API_KEY",
     "CF_ACCOUNT_ID",
     "CF_AI_API_TOKEN",
     "ADMIN_NAME",

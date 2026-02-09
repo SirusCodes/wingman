@@ -1,9 +1,6 @@
 from urllib.parse import urljoin, urlparse
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import (
-    RecursiveCharacterTextSplitter,
-    HTMLSemanticPreservingSplitter,
-)
+from langchain_text_splitters import RecursiveCharacterTextSplitter, HTMLSectionSplitter
 from bs4 import BeautifulSoup, Tag
 import requests
 
@@ -18,28 +15,29 @@ def clear_documents_with_data_id(data_id: str, user_id: str) -> None:
 
 def store_portfolio(url: str, data_id: str, user_id: str) -> list[str]:
     """Store the portfolio data in the vector store."""
-    site = crawl_website(url, max_depth=0)
+    sites = crawl_website(url, max_depth=0)
 
-    if not site:
+    if not sites:
         print(f"Failed to crawl portfolio URL: {url}")
         return []
 
-    text_splitter = HTMLSemanticPreservingSplitter(
+    html_section_splitter = HTMLSectionSplitter(
         headers_to_split_on=[
             ("h1", "Header 1"),
             ("h2", "Header 2"),
+            ("h3", "Header 3"),
+            ("h4", "Header 4"),
+            ("h5", "Header 5"),
+            ("h6", "Header 6"),
         ],
-        elements_to_preserve=["table", "ul", "ol", "code"],
-        denylist_tags=["script", "style", "head"],
-        external_metadata={"data_id": data_id, "source": url},
-        preserve_links=True,
-        chunk_overlap=200,
-        preserve_parent_metadata=True,
-        normalize_text=True,
     )
+    section_splits = html_section_splitter.split_text(sites[0])
+
+    for split in section_splits:
+        split.metadata.update({"data_id": data_id, "source": url})
 
     store = get_vector_store(collection_name=user_id)
-    return store.add_documents(text_splitter.split_text(site))
+    return store.add_documents(section_splits)
 
 
 def store_blog(url: str, data_id: str, user_id: str) -> list[str]:
@@ -50,31 +48,33 @@ def store_blog(url: str, data_id: str, user_id: str) -> list[str]:
         print(f"Failed to crawl blog URL: {url}")
         return []
 
-    def code_handler(element: Tag) -> str:
-        data_lang = element.get("data-lang")
-        code_format = f"<code:{data_lang}>{element.get_text()}</code>"
-
-        return code_format
-
-    text_splitter = HTMLSemanticPreservingSplitter(
+    html_section_splitter = HTMLSectionSplitter(
         headers_to_split_on=[
             ("h1", "Header 1"),
             ("h2", "Header 2"),
+            ("h3", "Header 3"),
+            ("h4", "Header 4"),
+            ("h5", "Header 5"),
+            ("h6", "Header 6"),
         ],
-        elements_to_preserve=["table", "ul", "ol", "code"],
-        denylist_tags=["script", "style", "head"],
-        custom_handlers={"code": code_handler},
-        external_metadata={"data_id": data_id, "source": url},
-        preserve_links=True,
-        chunk_overlap=200,
-        preserve_parent_metadata=True,
-        normalize_text=True,
     )
 
     store = get_vector_store(collection_name=user_id)
     doc_ids = []
     for site in sites:
-        doc_ids.extend(store.add_documents(text_splitter.split_text(site)))
+        section_splits = html_section_splitter.split_text(site)
+
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,
+            chunk_overlap=100,
+            add_start_index=True,
+        )
+
+        text_splits = text_splitter.split_documents(section_splits)
+
+        for split in text_splits:
+            split.metadata.update({"data_id": data_id, "source": url})
+        doc_ids.extend(store.add_documents(text_splits))
 
     return doc_ids
 
