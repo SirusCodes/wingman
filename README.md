@@ -1,10 +1,10 @@
-# ChatAbout
+# Wingman
 
 An AI-powered chatbot that acts as your wingman, answering questions about using your documents, portfolio, and blog content. Built with LangChain, FastAPI, and powered by advanced language models.
 
 ## 🎯 What It Does
 
-ChatAbout is a conversational AI application that:
+Wingman is a conversational AI application that:
 
 - **Answers Questions Intelligently** - Responds to user queries about your background, experience, and portfolio
 - **Retrieves Relevant Information** - Uses vector search (RAG) to find and cite relevant documents
@@ -35,7 +35,7 @@ ChatAbout is a conversational AI application that:
 
 ```bash
 git clone <repository-url>
-cd chatabout
+cd wingman
 uv sync
 ```
 
@@ -54,8 +54,8 @@ uv run main
 #### Docker
 
 ```bash
-docker build -t chatabout .
-docker run --env-file .env -p 8000:8000 chatabout
+docker build -t wingman .
+docker run --env-file .env -p 8000:8000 wingman
 ```
 
 The API will start on `http://localhost:8000`
@@ -63,7 +63,7 @@ The API will start on `http://localhost:8000`
 ## 📚 Project Structure
 
 ```
-chatabout/
+wingman/
 ├── main.py                  # FastAPI application and endpoints
 ├── src/
 │   ├── __init__.py
